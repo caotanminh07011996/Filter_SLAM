@@ -1,0 +1,37 @@
+function interestPtList = ExtractInterestPoints(baseSegmentList, tailleSegmentMinimale)
+    
+    if tailleSegmentMinimale == 0
+        % Analyse de la taille moyenne des segments
+        longueurMoyenne = mean(arrayfun(@(o) o.Norme, baseSegmentList));
+        tailleSegmentMinimale = longueurMoyenne;
+    else
+        tailleSegmentMinimale = tailleSegmentMinimale * 1000;
+    end
+    
+    interestPtList = [];
+    for i = 1:length(baseSegmentList)
+        segment = baseSegmentList(i);
+        
+        if segment.Norme > tailleSegmentMinimale
+            % Check following segment's lidar angle
+            if isnan(segment.angleSegmentRefLidarSuivant) || ...
+               abs(Modulo2PiAroundAngle(pi, segment.angleSegmentRefLidarSuivant) - pi) < DegToRad(5)
+                % Points sans intérêt dus à des masquages qui bougent tout le temps
+                % Add nothing
+            else
+                % Points d'intérêt dus à des transitions réelles sans masquage.
+                interestPtList = [interestPtList, InterestPoint(segment.PtFin.X / 1000, segment.PtFin.Y / 1000)];
+            end
+            
+            % Check previous segment's lidar angle
+            if isnan(segment.angleSegmentRefLidarPrecedent) || ...
+               abs(Modulo2PiAroundAngle(0, segment.angleSegmentRefLidarPrecedent) - 0) < DegToRad(5)
+                % Points sans intérêt dus à des masquages qui bougent tout le temps
+                % Add nothing
+            else
+                % Points d'intérêt dus à des transitions réelles sans masquage.
+                interestPtList = [interestPtList, InterestPoint(segment.PtDebut.X / 1000, segment.PtDebut.Y / 1000)];
+            end
+        end
+    end
+end
